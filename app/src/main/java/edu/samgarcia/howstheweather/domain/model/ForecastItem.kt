@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ForecastItem(
-    val day: Int,
+    val day: String,
     val temperature: String,
     val wind: String
 )
