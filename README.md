@@ -1,5 +1,5 @@
 # How's The Weather
-This is a simple Android app made with the purpose of learning how to access external APIs. It displays the data fetched from this [weather API](https://github.com/robertoduessmann/weather-api).
+This is a simple Android app made with the purpose of learning how to access external APIs. It displays the data fetched from this [API](https://github.com/chubin/wttr.in).
 
 ## Tech stack
 - [Jetpack Compose](https://developer.android.com/jetpack/compose) - UI toolkit
