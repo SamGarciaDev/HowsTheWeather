@@ -6,3 +6,8 @@ This is a simple Android app made with the purpose of learning how to access ext
 - [Ktor Client](https://ktor.io/docs/client.html) - asynchronous HTTP client
 - [Koin](https://insert-koin.io/) - dependency injection
 - [SQLite](https://www.sqlite.org/index.html) - local database
+
+## To do
+- Add search autocompletion
+- Save and display recent searches
+- Make the UI pretty 🦋
