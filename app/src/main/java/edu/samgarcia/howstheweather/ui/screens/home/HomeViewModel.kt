@@ -42,6 +42,8 @@ class HomeViewModel(
     val autoCompleteOptions = mutableStateOf(listOf<String>())
     val dropdownExpanded = mutableStateOf(false)
 
+    val isLoading = mutableStateOf(false)
+
     fun onEvent(event: HomeEvent) {
         when(event) {
             is HomeEvent.OnCityChange -> {
@@ -61,7 +63,9 @@ class HomeViewModel(
                 if (city.isBlank()) return
 
                 viewModelScope.launch {
+                    isLoading.value = true
                     weather = weatherApi.getWeatherByCity(city)
+                    isLoading.value = false
                 }
             }
             is HomeEvent.OnDropdownDismissRequest -> {

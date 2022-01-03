@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
@@ -60,85 +61,96 @@ fun HomeScreen(viewModel: HomeViewModel = get()) {
             }
         }
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 8.dp, vertical = 16.dp)
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            val keyboardController = LocalSoftwareKeyboardController.current
-
-            AutoCompleteTextField(
-                modifier = Modifier.fillMaxWidth(),
-                viewModel = viewModel
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp, vertical = 16.dp)
             ) {
-                OutlinedTextField(
-                    value = viewModel.city,
-                    onValueChange = { value ->
-                        viewModel.onEvent(HomeEvent.OnCityChange(value))
-                    },
-                    placeholder = {
-                        Text(text = "Search your city...")
-                    },
-                    label = {
-                        Text(text = "City")
-                    },
-                    trailingIcon = {
-                        IconButton(
-                            onClick = {
+                val keyboardController = LocalSoftwareKeyboardController.current
+
+                AutoCompleteTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    viewModel = viewModel
+                ) {
+                    OutlinedTextField(
+                        value = viewModel.city,
+                        onValueChange = { value ->
+                            viewModel.onEvent(HomeEvent.OnCityChange(value))
+                        },
+                        placeholder = {
+                            Text(text = "Search your city...")
+                        },
+                        label = {
+                            Text(text = "City")
+                        },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = {
+                                    search(
+                                        viewModel = viewModel,
+                                        keyboardController = keyboardController
+                                    )
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "Search"
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = ImeAction.Search
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onSearch = {
                                 search(
                                     viewModel = viewModel,
                                     keyboardController = keyboardController
                                 )
                             }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Search"
-                            )
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        imeAction = ImeAction.Search
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onSearch = {
-                            search(
-                                viewModel = viewModel,
-                                keyboardController = keyboardController
-                            )
-                        }
-                    )
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Card(
-                elevation = 10.dp,
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                viewModel.weather?.let { weather ->
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.SpaceEvenly,
-                        modifier = Modifier.padding(16.dp)
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        Text(
-                            text = "${viewModel.weather?.area}, ${viewModel.weather?.region}",
-                            fontSize = typography.h4.fontSize,
-                            fontWeight = typography.h4.fontWeight,
-                            textAlign = TextAlign.Center
                         )
+                    )
+                }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                        WeatherDisplay(weather = weather)
+                Card(
+                    elevation = 10.dp,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    viewModel.weather?.let { weather ->
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.SpaceEvenly,
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            Text(
+                                text = "${viewModel.weather?.area}, ${viewModel.weather?.region}",
+                                fontSize = typography.h4.fontSize,
+                                fontWeight = typography.h4.fontWeight,
+                                textAlign = TextAlign.Center
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            WeatherDisplay(weather = weather)
+                        }
                     }
                 }
+            }
+
+
+            if (viewModel.isLoading.value) {
+                CircularProgressIndicator()
             }
         }
     }
