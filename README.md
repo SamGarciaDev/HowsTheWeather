@@ -9,6 +9,6 @@ This is a simple Android app made with the purpose of learning how to access ext
 
 ## To do
 - [x] Add search autocompletion
-- [ ] Add loading indicator while fetching API response
+- [x] Add loading indicator while fetching API response
 - [ ] Save and display recent searches
 - [ ] Make the UI pretty 🦋
