@@ -1,9 +1,12 @@
 package edu.samgarcia.howstheweather.ui.screens.home
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.MaterialTheme.colors
 import androidx.compose.material.MaterialTheme.shapes
@@ -12,23 +15,29 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.PopupProperties
 import edu.samgarcia.howstheweather.domain.model.ForecastItem
 import edu.samgarcia.howstheweather.domain.model.WeatherItem
 import org.koin.androidx.compose.get
 import java.text.SimpleDateFormat
 import java.util.*
 
+@ExperimentalComposeUiApi
 @Composable
 fun HomeScreen(viewModel: HomeViewModel = get()) {
-    val context = LocalContext.current
     val scaffoldState = rememberScaffoldState()
 
     Scaffold(
@@ -41,7 +50,7 @@ fun HomeScreen(viewModel: HomeViewModel = get()) {
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
-                        text = "🌄 HowsTheWeather",
+                        text = "🌄 How's The Weather?",
                         fontSize = typography.h6.fontSize,
                         color = colors.onPrimary
                     )
@@ -53,58 +62,74 @@ fun HomeScreen(viewModel: HomeViewModel = get()) {
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(horizontal = 8.dp, vertical = 16.dp)
         ) {
+            val keyboardController = LocalSoftwareKeyboardController.current
 
-            OutlinedTextField(
-                value = viewModel.city,
-                onValueChange = { value ->
-                    viewModel.onEvent(HomeEvent.OnCityChange(value))
-                },
-                placeholder = {
-                    Text(text = "Search your city...")
-                },
-                label = {
-                    Text(text = "City")
-                },
-                trailingIcon = {
-                    IconButton(
-                        onClick = {
-                            viewModel.onEvent(HomeEvent.OnSearchClick)
-
-                            Toast.makeText(
-                                context,
-                                "You searched something 🔍",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search"
-                        )
-                    }
-                },
+            AutoCompleteTextField(
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+                viewModel = viewModel
+            ) {
+                OutlinedTextField(
+                    value = viewModel.city,
+                    onValueChange = { value ->
+                        viewModel.onEvent(HomeEvent.OnCityChange(value))
+                    },
+                    placeholder = {
+                        Text(text = "Search your city...")
+                    },
+                    label = {
+                        Text(text = "City")
+                    },
+                    trailingIcon = {
+                        IconButton(
+                            onClick = {
+                                search(
+                                    viewModel = viewModel,
+                                    keyboardController = keyboardController
+                                )
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Search"
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Search
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+                            search(
+                                viewModel = viewModel,
+                                keyboardController = keyboardController
+                            )
+                        }
+                    )
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            viewModel.weather?.let { weather ->
-                Card(
-                    elevation = 10.dp,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
+            Card(
+                elevation = 10.dp,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                viewModel.weather?.let { weather ->
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceEvenly,
                         modifier = Modifier.padding(16.dp)
+                            .verticalScroll(rememberScrollState())
                     ) {
                         Text(
-                            text = "Weather in ${viewModel.city}",
+                            text = viewModel.city,
                             fontSize = typography.h4.fontSize,
-                            fontWeight = typography.h4.fontWeight
+                            fontWeight = typography.h4.fontWeight,
+                            textAlign = TextAlign.Center
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -116,6 +141,40 @@ fun HomeScreen(viewModel: HomeViewModel = get()) {
         }
     }
 }
+
+@ExperimentalComposeUiApi
+@Composable
+fun AutoCompleteTextField(
+    viewModel: HomeViewModel,
+    modifier: Modifier = Modifier,
+    textField: @Composable () -> Unit
+) {
+    Box(modifier = modifier) {
+        textField()
+
+        DropdownMenu(
+            expanded = viewModel.dropdownExpanded.value,
+            onDismissRequest = { viewModel.onEvent(HomeEvent.OnDropdownDismissRequest) },
+            properties = PopupProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true,
+                focusable = false,
+                clippingEnabled = false
+            )
+        ) {
+            viewModel.autoCompleteOptions.value.forEach { city ->
+                DropdownMenuItem(
+                    onClick = {
+                        viewModel.onEvent(HomeEvent.OnCityChange(city))
+                    }
+                ) {
+                    Text(text = city)
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun WeatherDisplay(weather: WeatherItem, modifier: Modifier = Modifier) {
@@ -266,4 +325,14 @@ fun HomeScreenPreview() {
             .padding(16.dp)
             .background(Color.White)
     )
+}
+
+@ExperimentalComposeUiApi
+private fun search(
+    viewModel: HomeViewModel,
+    keyboardController: SoftwareKeyboardController?
+) {
+    keyboardController?.hide()
+    viewModel.weather = null
+    viewModel.onEvent(HomeEvent.OnSearchClick)
 }
