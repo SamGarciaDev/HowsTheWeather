@@ -1,12 +1,10 @@
 package edu.samgarcia.howstheweather.ui.screens.home
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.MaterialTheme.colors
 import androidx.compose.material.MaterialTheme.shapes
@@ -18,8 +16,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -29,7 +30,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
+import edu.samgarcia.howstheweather.R
 import edu.samgarcia.howstheweather.domain.model.WeatherItem
+import edu.samgarcia.howstheweather.ui.theme.topAppBarBackground
 import org.koin.androidx.compose.get
 import java.text.SimpleDateFormat
 import java.util.*
@@ -51,7 +54,7 @@ fun HomeScreen(viewModel: HomeViewModel = get()) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 8.dp, vertical = 16.dp)
+                    .padding(all = 8.dp)
             ) {
                 val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -101,28 +104,69 @@ fun HomeScreen(viewModel: HomeViewModel = get()) {
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Card(
-                    elevation = 10.dp,
+                    elevation = 8.dp,
                     modifier = Modifier.fillMaxSize(),
+                    contentColor = Color.White
                 ) {
+                    val desc = viewModel.weather?.description?.lowercase()
+
+                    @DrawableRes
+                    val backgroundId = when {
+                        desc == null -> R.drawable.background_default
+                        desc.matches(Regex("^.*(sun|clear).*\$")) -> R.drawable.background_sunny
+                        desc.matches(Regex("^.*(cloud|overcast).*\$")) -> R.drawable.background_cloudy
+                        desc.matches(Regex("^.*(rain|shower|storm|mist|drizzle|haze).*\$")) -> R.drawable.background_rainy
+                        desc.matches(Regex("^.*(snow|blizzard).*\$")) -> R.drawable.background_snowy
+                        else -> R.drawable.background_default
+                    }
+
+                    Image(
+                        painter = painterResource(id = backgroundId),
+                        contentDescription = "Background",
+                        contentScale = ContentScale.Crop
+                    )
+
                     viewModel.weather?.let { weather ->
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.SpaceEvenly,
+                        WeatherDisplay(
+                            weather = weather,
                             modifier = Modifier
-                                .padding(16.dp)
+                                .fillMaxHeight()
+                                .padding(32.dp)
                                 .verticalScroll(rememberScrollState())
+                        )
+                    }
+                    
+                    if (viewModel.noResult.value) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 64.dp),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            WeatherDisplay(weather = weather)
+                            Image(
+                                painter = painterResource(id = R.drawable.no_result),
+                                contentDescription = "No result",
+                                modifier = Modifier.size(100.dp),
+                                contentScale = ContentScale.None
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Text(
+                                text = "There is nothing to show. Please make a search.",
+                                textAlign = TextAlign.Center
+                            )
                         }
                     }
                 }
             }
 
             if (viewModel.isLoading.value) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = Color.White)
             }
         }
     }
@@ -131,13 +175,14 @@ fun HomeScreen(viewModel: HomeViewModel = get()) {
 @Composable
 fun MyTopBar() {
     TopAppBar(
-        backgroundColor = colors.primary
+        backgroundColor = colors.topAppBarBackground,
+        contentColor = Color.White
     ) {
         Row (
             modifier = Modifier.padding(16.dp)
         ) {
             Text(
-                text = "🌄 How's The Weather?",
+                text = "🌥   How's The Weather?",
                 fontSize = typography.h6.fontSize,
                 color = colors.onPrimary
             )
@@ -190,8 +235,8 @@ fun AutoCompleteTextField(
 fun WeatherDisplay(weather: WeatherItem, modifier: Modifier = Modifier) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceEvenly,
         modifier = modifier
-            .padding(16.dp)
     ) {
         Text(
             text = "${weather.area}, ${weather.region}",
@@ -228,7 +273,8 @@ fun WeatherDisplay(weather: WeatherItem, modifier: Modifier = Modifier) {
 
         Text(
             text = weather.description,
-            fontSize = 16.sp
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -244,9 +290,9 @@ fun WeatherDisplay(weather: WeatherItem, modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .border(
-                    1.dp,
-                    colors.primary,
-                    shapes.medium
+                    width = 1.dp,
+                    color = Color.White,
+                    shape = shapes.medium
                 )
                 .padding(8.dp)
                 .fillMaxWidth()
@@ -279,7 +325,7 @@ fun WeatherDisplay(weather: WeatherItem, modifier: Modifier = Modifier) {
                 if (index < weather.forecast.size - 1) {
                     VerticalDivider(
                         thickness = 1.dp,
-                        color = colors.primary,
+                        color = Color.White,
                         modifier = Modifier.height(75.dp)
                     )
                 }

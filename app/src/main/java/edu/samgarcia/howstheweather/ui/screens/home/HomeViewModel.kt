@@ -44,6 +44,7 @@ class HomeViewModel(
     val dropdownExpanded = mutableStateOf(false)
 
     val isLoading = mutableStateOf(false)
+    val noResult = mutableStateOf(true)
 
     fun onEvent(event: HomeEvent) {
         when(event) {
@@ -67,6 +68,7 @@ class HomeViewModel(
                     isLoading.value = true
                     weather = weatherApi.getWeatherByCity(city.value.text)
                     isLoading.value = false
+                    noResult.value = false
                 }
             }
             is HomeEvent.OnDropdownDismissRequest -> {
