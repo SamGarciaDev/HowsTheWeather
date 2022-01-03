@@ -1,6 +1,5 @@
 package edu.samgarcia.howstheweather.ui.screens.home
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -18,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
@@ -27,12 +25,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
-import edu.samgarcia.howstheweather.domain.model.ForecastItem
 import edu.samgarcia.howstheweather.domain.model.WeatherItem
 import org.koin.androidx.compose.get
 import java.text.SimpleDateFormat
@@ -45,21 +41,7 @@ fun HomeScreen(viewModel: HomeViewModel = get()) {
 
     Scaffold(
         scaffoldState = scaffoldState,
-        topBar = {
-            TopAppBar(
-                backgroundColor = colors.primary
-            ) {
-                Row (
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "🌄 How's The Weather?",
-                        fontSize = typography.h6.fontSize,
-                        color = colors.onPrimary
-                    )
-                }
-            }
-        }
+        topBar = { MyTopBar() }
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -78,7 +60,7 @@ fun HomeScreen(viewModel: HomeViewModel = get()) {
                     viewModel = viewModel
                 ) {
                     OutlinedTextField(
-                        value = viewModel.city,
+                        value = viewModel.city.value,
                         onValueChange = { value ->
                             viewModel.onEvent(HomeEvent.OnCityChange(value))
                         },
@@ -133,25 +115,32 @@ fun HomeScreen(viewModel: HomeViewModel = get()) {
                                 .padding(16.dp)
                                 .verticalScroll(rememberScrollState())
                         ) {
-                            Text(
-                                text = "${viewModel.weather?.area}, ${viewModel.weather?.region}",
-                                fontSize = typography.h4.fontSize,
-                                fontWeight = typography.h4.fontWeight,
-                                textAlign = TextAlign.Center
-                            )
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
                             WeatherDisplay(weather = weather)
                         }
                     }
                 }
             }
 
-
             if (viewModel.isLoading.value) {
                 CircularProgressIndicator()
             }
+        }
+    }
+}
+
+@Composable
+fun MyTopBar() {
+    TopAppBar(
+        backgroundColor = colors.primary
+    ) {
+        Row (
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "🌄 How's The Weather?",
+                fontSize = typography.h6.fontSize,
+                color = colors.onPrimary
+            )
         }
     }
 }
@@ -179,7 +168,14 @@ fun AutoCompleteTextField(
             viewModel.autoCompleteOptions.value.forEach { city ->
                 DropdownMenuItem(
                     onClick = {
-                        viewModel.onEvent(HomeEvent.OnCityChange(city))
+                        viewModel.onEvent(
+                            HomeEvent.OnCityChange(
+                                TextFieldValue(
+                                    text = city,
+                                    selection = TextRange(city.length)
+                                )
+                            )
+                        )
                     }
                 ) {
                     Text(text = city)
@@ -197,6 +193,15 @@ fun WeatherDisplay(weather: WeatherItem, modifier: Modifier = Modifier) {
         modifier = modifier
             .padding(16.dp)
     ) {
+        Text(
+            text = "${weather.area}, ${weather.region}",
+            fontSize = typography.h4.fontSize,
+            fontWeight = typography.h4.fontWeight,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         val today = Calendar.getInstance()
 
         Text(

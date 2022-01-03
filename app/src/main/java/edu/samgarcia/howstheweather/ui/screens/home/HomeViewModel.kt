@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -19,7 +20,7 @@ class HomeViewModel(
     private val weatherApi: WeatherApi
 ): AndroidViewModel(context) {
 
-    var city by mutableStateOf("")
+    var city = mutableStateOf(TextFieldValue())
         private set
 
     var weather by mutableStateOf<WeatherItem?>(null)
@@ -47,12 +48,12 @@ class HomeViewModel(
     fun onEvent(event: HomeEvent) {
         when(event) {
             is HomeEvent.OnCityChange -> {
-                city = event.city
+                city.value = event.city
                 dropdownExpanded.value = true
 
-                if (event.city.isNotBlank()) {
+                if (event.city.text.isNotBlank()) {
                     autoCompleteOptions.value = cities
-                        .filter { it.lowercase().startsWith(event.city.lowercase()) && it != event.city }
+                        .filter { it.lowercase().startsWith(event.city.text.lowercase()) && it != event.city.text }
                         .take(3)
                 } else {
                     dropdownExpanded.value = false
@@ -60,11 +61,11 @@ class HomeViewModel(
                 }
             }
             is HomeEvent.OnSearchClick -> {
-                if (city.isBlank()) return
+                if (city.value.text.isBlank()) return
 
                 viewModelScope.launch {
                     isLoading.value = true
-                    weather = weatherApi.getWeatherByCity(city)
+                    weather = weatherApi.getWeatherByCity(city.value.text)
                     isLoading.value = false
                 }
             }
