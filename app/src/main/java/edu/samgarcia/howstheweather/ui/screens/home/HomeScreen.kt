@@ -1,5 +1,6 @@
 package edu.samgarcia.howstheweather.ui.screens.home
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -20,12 +21,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
@@ -126,7 +128,7 @@ fun HomeScreen(viewModel: HomeViewModel = get()) {
                             .verticalScroll(rememberScrollState())
                     ) {
                         Text(
-                            text = viewModel.city,
+                            text = "${viewModel.weather?.area}, ${viewModel.weather?.region}",
                             fontSize = typography.h4.fontSize,
                             fontWeight = typography.h4.fontWeight,
                             textAlign = TextAlign.Center
@@ -196,14 +198,14 @@ fun WeatherDisplay(weather: WeatherItem, modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(8.dp))
         
         Text(
-            text = weather.temperature,
+            text = "${weather.temperature} °C",
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Text(text = weather.wind)
+        Text(text = "${weather.wind} km/h")
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -232,52 +234,38 @@ fun WeatherDisplay(weather: WeatherItem, modifier: Modifier = Modifier) {
                 .padding(8.dp)
                 .fillMaxWidth()
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.weight(1f)
-            ) {
-                today.add(Calendar.DATE, 1)
-
-                Text(
-                    text = SimpleDateFormat(
-                        "EEE",
+            weather.forecast.forEachIndexed { index, day ->
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    val date = SimpleDateFormat(
+                        "yyyy-MM-dd",
                         Locale.getDefault()
-                    ).format(today.time).uppercase()
-                )
+                    ).parse(day.date)
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = SimpleDateFormat(
+                            "EEE",
+                            Locale.getDefault()
+                        ).format(date!!).uppercase()
+                    )
 
-                Text(
-                    text = weather.forecast[0].temperature,
-                    fontSize = 24.sp
-                )
-            }
+                    Spacer(modifier = Modifier.height(8.dp))
 
-            VerticalDivider(
-                thickness = 1.dp,
-                color = colors.primary,
-                modifier = Modifier.height(75.dp)
-            )
+                    Text(
+                        text = "${day.temperature} °C",
+                        fontSize = 24.sp
+                    )
+                }
 
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.weight(1f)
-            ) {
-                today.add(Calendar.DATE, 1)
-
-                Text(
-                    text = SimpleDateFormat(
-                        "EEE",
-                        Locale.getDefault()
-                    ).format(today.time).uppercase()
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = weather.forecast[1].temperature,
-                    fontSize = 24.sp
-                )
+                if (index < weather.forecast.size - 1) {
+                    VerticalDivider(
+                        thickness = 1.dp,
+                        color = colors.primary,
+                        modifier = Modifier.height(75.dp)
+                    )
+                }
             }
         }
     }
@@ -294,36 +282,6 @@ fun VerticalDivider(
             .fillMaxHeight()
             .width(thickness)
             .background(color = color)
-    )
-}
-
-@Preview
-@Composable
-fun HomeScreenPreview() {
-    val weather = WeatherItem(
-        temperature = "30 °C",
-        wind = "20 km/h",
-        description = "Partly cloudy",
-        forecast = listOf(
-            ForecastItem(
-                day = "1",
-                temperature = "27 °C",
-                wind = "12 km/h"
-            ),
-            ForecastItem(
-                day = "2",
-                temperature = "22 °C",
-                wind = "8 km/h"
-            )
-        )
-    )
-
-    WeatherDisplay(
-        weather,
-        Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .background(Color.White)
     )
 }
 

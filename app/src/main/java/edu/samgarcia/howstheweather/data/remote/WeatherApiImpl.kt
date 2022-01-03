@@ -1,26 +1,38 @@
 package edu.samgarcia.howstheweather.data.remote
 
-import android.util.Log
 import edu.samgarcia.howstheweather.domain.model.WeatherItem
+import edu.samgarcia.howstheweather.domain.model.WeatherSerializable
 import edu.samgarcia.howstheweather.utils.Constants.WEATHER_API_URL
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.features.json.*
+import io.ktor.client.features.json.serializer.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 
 class WeatherApiImpl: WeatherApi {
     override suspend fun getWeatherByCity(city: String): WeatherItem? {
-        HttpClient().use { client ->
-            val response: HttpResponse = client.request(WEATHER_API_URL + city)
-
-            if (response.status != HttpStatusCode.OK) {
-                return null
+        val client = HttpClient(CIO) {
+            install(JsonFeature) {
+                serializer = KotlinxSerializer(kotlinx.serialization.json.Json {
+                    ignoreUnknownKeys = true
+                    isLenient = true
+                })
             }
-
-            return Json.decodeFromString<WeatherItem>(response.receive())
         }
+
+        val response: HttpResponse = client.request("$WEATHER_API_URL/$city?format=j1") {
+            contentType(ContentType.Application.Json)
+        }
+
+        if (response.status != HttpStatusCode.OK) {
+            return null
+        }
+
+        val weather: WeatherSerializable = response.receive()
+
+        return WeatherItem.ofWeatherSerializable(weather)
     }
 }
